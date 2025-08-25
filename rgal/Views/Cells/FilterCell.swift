@@ -7,15 +7,9 @@ class FilterCell: UICollectionViewCell {
     private struct Layout {
         static let cornerRadius: CGFloat = 12
         static let verticalPadding: CGFloat = 8
-        static let horizontalPadding: CGFloat = 12
+        static let horizontalPadding: CGFloat = 8
     }
-    
-    override var isSelected: Bool {
-        didSet {
-            updateAppearance()
-        }
-    }
-    
+        
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -30,15 +24,27 @@ class FilterCell: UICollectionViewCell {
         setupFrames()
     }
     
-    private func setupUI() {
-        layer.cornerRadius = Layout.cornerRadius
-        clipsToBounds = true
+    override func updateConfiguration(using state: UICellConfigurationState) {
+        super.updateConfiguration(using: state)
         
+        var backgroundConfig = UIBackgroundConfiguration.listPlainCell()
+        
+        if state.isSelected || state.isHighlighted {
+            backgroundConfig.backgroundColor = UIColor.label
+            titleLabel.textColor = UIColor.systemBackground
+        } else {
+            backgroundConfig.backgroundColor = UIColor.systemGray6
+            titleLabel.textColor = UIColor.label
+        }
+        
+        backgroundConfig.cornerRadius = Layout.cornerRadius
+        self.backgroundConfiguration = backgroundConfig
+    }
+    
+    private func setupUI() {
         titleLabel.font = UIFont.systemFont(ofSize: 14, weight: .medium)
         titleLabel.textAlignment = .center
         contentView.addSubview(titleLabel)
-        
-        updateAppearance()
     }
     
     private func setupFrames() {
@@ -50,17 +56,8 @@ class FilterCell: UICollectionViewCell {
         )
     }
     
-    private func updateAppearance() {
-        if isSelected {
-            backgroundColor = .label
-            titleLabel.textColor = .systemBackground
-        } else {
-            backgroundColor = .systemGray6
-            titleLabel.textColor = .label
-        }
-    }
-    
     func configure(with title: String) {
         titleLabel.text = title
+        setNeedsUpdateConfiguration()
     }
 }

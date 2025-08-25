@@ -1,20 +1,14 @@
 import UIKit
 
-class ShortsTabViewController: UIViewController {
+class ShortsTabViewController: UIViewController, UICollectionViewDelegate {
     
     // MARK: - Properties
     var startingVideoIndex: Int = 0
     var isFromHomeNavigation: Bool = false
-    private var hasScrolledToInitialVideo = false
     
     // MARK: - UI Elements
-    private let collectionView: UICollectionView = {
-        let layout = UICollectionViewFlowLayout()
-        layout.scrollDirection = .vertical
-        layout.minimumLineSpacing = 0
-        layout.minimumInteritemSpacing = 0
-        
-        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+    private lazy var collectionView: UICollectionView = {
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
         collectionView.backgroundColor = .black
         collectionView.showsVerticalScrollIndicator = false
         collectionView.isPagingEnabled = true
@@ -26,17 +20,19 @@ class ShortsTabViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupCollectionView()
+
+        if startingVideoIndex > 0 && startingVideoIndex < MockData.shortsVideos.count {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                let indexPath = IndexPath(item: self.startingVideoIndex, section: 0)
+                self.collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: false)
+            }
+        }
     }
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         collectionView.frame = view.bounds
-        
-        if !hasScrolledToInitialVideo && startingVideoIndex >= 0 {
-            let indexPath = IndexPath(item: startingVideoIndex, section: 0)
-            collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: false)
-            hasScrolledToInitialVideo = true
-        }
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -58,6 +54,28 @@ class ShortsTabViewController: UIViewController {
         }
     }
     
+    // MARK: - CompositionalLayout
+    private func createLayout() -> UICollectionViewCompositionalLayout {
+        return UICollectionViewCompositionalLayout { sectionIndex, layoutEnvironment in
+            let itemSize = NSCollectionLayoutSize(
+                widthDimension: .fractionalWidth(1.0),
+                heightDimension: .fractionalHeight(1.0)
+            )
+            let item = NSCollectionLayoutItem(layoutSize: itemSize)
+            
+            let groupSize = NSCollectionLayoutSize(
+                widthDimension: .fractionalWidth(1.0),
+                heightDimension: .fractionalHeight(1.0)
+            )
+            let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+            
+            let section = NSCollectionLayoutSection(group: group)
+            section.orthogonalScrollingBehavior = .none
+            
+            return section
+        }
+    }
+    
     private func setupUI() {
         view.backgroundColor = .black
     }
@@ -69,6 +87,11 @@ class ShortsTabViewController: UIViewController {
         navigationController?.navigationBar.setBackgroundImage(UIImage(), for: .default)
         navigationController?.navigationBar.shadowImage = UIImage()
         navigationController?.navigationBar.isTranslucent = true
+        
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithTransparentBackground()
+        navigationController?.navigationBar.standardAppearance = appearance
+        navigationController?.navigationBar.scrollEdgeAppearance = appearance
         
         if !isFromHomeNavigation {
             navigationItem.hidesBackButton = true
@@ -99,7 +122,7 @@ class ShortsTabViewController: UIViewController {
         collectionView.delegate = self
         collectionView.dataSource = self
         
-        collectionView.contentInsetAdjustmentBehavior = .automatic
+        collectionView.contentInsetAdjustmentBehavior = .never
         
         view.addSubview(collectionView)
     }
@@ -125,13 +148,5 @@ extension ShortsTabViewController: UICollectionViewDataSource {
         let video = MockData.shortsVideos[indexPath.item]
         cell.configure(with: video, at: indexPath.item)
         return cell
-    }
-}
-
-// MARK: - UICollectionViewDelegateFlowLayout
-extension ShortsTabViewController: UICollectionViewDelegateFlowLayout {
-    
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return view.bounds.size
     }
 }
