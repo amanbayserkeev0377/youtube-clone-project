@@ -2,6 +2,7 @@ import UIKit
 
 class ShortsHeaderView: UICollectionReusableView {
     
+    // MARK: - UI Elements
     private let shortsIcon = UIImageView()
     private let shortsLabel = UILabel()
     
@@ -20,7 +21,7 @@ class ShortsHeaderView: UICollectionReusableView {
         addSubview(shortsIcon)
         
         shortsLabel.text = "Shorts"
-        shortsLabel.font = UIFont.systemFont(ofSize: 18, weight: .semibold)
+        shortsLabel.font = FontConstants.shortsHeaderFont
         shortsLabel.textColor = .label
         addSubview(shortsLabel)
     }
@@ -28,14 +29,19 @@ class ShortsHeaderView: UICollectionReusableView {
     override func layoutSubviews() {
         super.layoutSubviews()
         
-        shortsIcon.frame = CGRect(x: 4, y: 4, width: 24, height: 24)
+        shortsIcon.frame = CGRect(
+            x: LayoutConstants.ShortsHeader.iconPadding,
+            y: LayoutConstants.ShortsHeader.iconPadding,
+            width: LayoutConstants.ShortsHeader.iconSize,
+            height: LayoutConstants.ShortsHeader.iconSize
+        )
         
-        let labelSize = shortsLabel.sizeThatFits(CGSize(width: CGFloat.greatestFiniteMagnitude, height: 24))
+        let labelSize = shortsLabel.sizeThatFits(CGSize(width: CGFloat.greatestFiniteMagnitude, height: LayoutConstants.ShortsHeader.labelHeight))
         shortsLabel.frame = CGRect(
-            x: shortsIcon.frame.maxX + 8,
-            y: 4,
+            x: shortsIcon.frame.maxX + LayoutConstants.ShortsHeader.iconLabelSpacing,
+            y: LayoutConstants.ShortsHeader.iconPadding,
             width: labelSize.width,
-            height: 24
+            height: LayoutConstants.ShortsHeader.labelHeight
         )
     }
 }

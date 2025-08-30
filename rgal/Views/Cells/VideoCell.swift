@@ -10,19 +10,6 @@ class VideoCell: UICollectionViewCell {
     private let channelInfoLabel = UILabel()
     private let moreButton = UIButton()
     
-    // MARK: - Constants
-    private struct Layout {
-        static let cellPadding: CGFloat = 12
-        static let thumbnailAspectRatio: CGFloat = 16.0/9.0
-        static let avatarSize: CGFloat = 36
-        static let moreButtonSize: CGFloat = 24
-        static let durationLabelHeight: CGFloat = 20
-        static let spacingBetweenElements: CGFloat = 12
-        static let textSpacing: CGFloat = 2
-        static let horizontalPadding: CGFloat = 16
-        static let durationPadding: CGFloat = 8
-    }
-    
     // MARK: - Initialization
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -36,11 +23,24 @@ class VideoCell: UICollectionViewCell {
     override func layoutSubviews() {
         super.layoutSubviews()
         setupFrames()
+        
+        // Apply gradients after frame is set to ensure proper sizing
+        if let video = currentVideo {
+            applyGradients(for: video)
+        }
     }
+    
+    // MARK: - Video Storage
+    private var currentVideo: Video?
     
     override func prepareForReuse() {
         super.prepareForReuse()
+        currentVideo = nil
         removeGradientLayers()
+        
+        // Reset to default colors to prevent flashing
+        thumbnailContainerView.backgroundColor = .systemGray5
+        channelAvatarContainerView.backgroundColor = .systemGray4
     }
     
     // MARK: - Setup
@@ -55,11 +55,13 @@ class VideoCell: UICollectionViewCell {
     
     private func setupThumbnail() {
         thumbnailContainerView.clipsToBounds = true
+        // Set a default background color to avoid white flash
+        thumbnailContainerView.backgroundColor = .systemGray5
         contentView.addSubview(thumbnailContainerView)
         
         durationLabel.backgroundColor = UIColor.black.withAlphaComponent(0.2)
         durationLabel.textColor = .white
-        durationLabel.font = UIFont.systemFont(ofSize: 12, weight: .medium)
+        durationLabel.font = FontConstants.videoCellDurationFont
         durationLabel.textAlignment = .center
         durationLabel.layer.cornerRadius = 4
         durationLabel.clipsToBounds = true
@@ -68,17 +70,19 @@ class VideoCell: UICollectionViewCell {
     
     private func setupChannelAvatar() {
         channelAvatarContainerView.clipsToBounds = true
-        channelAvatarContainerView.layer.cornerRadius = Layout.avatarSize / 2
+        channelAvatarContainerView.layer.cornerRadius = LayoutConstants.VideoCell.avatarSize / 2
+        // Set a default background color to avoid white flash
+        channelAvatarContainerView.backgroundColor = .systemGray4
         contentView.addSubview(channelAvatarContainerView)
     }
     
     private func setupLabels() {
-        titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        titleLabel.font = FontConstants.videoCellTitleFont
         titleLabel.textColor = .label
         titleLabel.numberOfLines = 2
         contentView.addSubview(titleLabel)
         
-        channelInfoLabel.font = UIFont.systemFont(ofSize: 14, weight: .regular)
+        channelInfoLabel.font = FontConstants.videoCellInfoFont
         channelInfoLabel.textColor = .secondaryLabel
         channelInfoLabel.numberOfLines = 1
         contentView.addSubview(channelInfoLabel)
@@ -91,15 +95,15 @@ class VideoCell: UICollectionViewCell {
         contentView.addSubview(moreButton)
     }
     
-    // MARK: = Frame Layout
+    // MARK: - Frame Layout
     private func setupFrames() {
         let cellWidth = contentView.bounds.width
         let thumbnailWidth = cellWidth
-        let thumbnailHeight = thumbnailWidth / Layout.thumbnailAspectRatio
+        let thumbnailHeight = thumbnailWidth / LayoutConstants.VideoCell.thumbnailAspectRatio
         
         thumbnailContainerView.frame = CGRect(
             x: 0,
-            y: Layout.cellPadding,
+            y: LayoutConstants.VideoCell.cellPadding,
             width: thumbnailWidth,
             height: thumbnailHeight
         )
@@ -109,29 +113,29 @@ class VideoCell: UICollectionViewCell {
         let durationWidth = max(35, durationSize.width + 8)
         
         durationLabel.frame = CGRect(
-            x: thumbnailWidth - durationWidth - Layout.durationPadding,
-            y: thumbnailHeight - Layout.durationLabelHeight - Layout.durationPadding,
+            x: thumbnailWidth - durationWidth - LayoutConstants.VideoCell.durationPadding,
+            y: thumbnailHeight - LayoutConstants.VideoCell.durationLabelHeight - LayoutConstants.VideoCell.durationPadding,
             width: durationWidth,
-            height: Layout.durationLabelHeight
+            height: LayoutConstants.VideoCell.durationLabelHeight
         )
         
-        let bottomSectionY = thumbnailContainerView.frame.maxY + Layout.spacingBetweenElements
+        let bottomSectionY = thumbnailContainerView.frame.maxY + LayoutConstants.VideoCell.spacingBetweenElements
         
         channelAvatarContainerView.frame = CGRect(
-            x: Layout.horizontalPadding,
+            x: LayoutConstants.VideoCell.horizontalPadding,
             y: bottomSectionY,
-            width: Layout.avatarSize,
-            height: Layout.avatarSize
+            width: LayoutConstants.VideoCell.avatarSize,
+            height: LayoutConstants.VideoCell.avatarSize
         )
         
         moreButton.frame = CGRect(
-            x: cellWidth - Layout.moreButtonSize - Layout.horizontalPadding,
+            x: cellWidth - LayoutConstants.VideoCell.moreButtonSize - LayoutConstants.VideoCell.horizontalPadding,
             y: bottomSectionY,
-            width: Layout.moreButtonSize,
-            height: Layout.moreButtonSize
+            width: LayoutConstants.VideoCell.moreButtonSize,
+            height: LayoutConstants.VideoCell.moreButtonSize
         )
         
-        let textStartX = channelAvatarContainerView.frame.maxX + Layout.spacingBetweenElements
+        let textStartX = channelAvatarContainerView.frame.maxX + LayoutConstants.VideoCell.spacingBetweenElements
         let textEndX = moreButton.frame.minX - 8
         let textWidth = textEndX - textStartX
         
@@ -146,7 +150,7 @@ class VideoCell: UICollectionViewCell {
         let channelInfoSize = channelInfoLabel.sizeThatFits(CGSize(width: textWidth, height: 20))
         channelInfoLabel.frame = CGRect(
             x: textStartX,
-            y: titleLabel.frame.maxY + Layout.textSpacing,
+            y: titleLabel.frame.maxY + LayoutConstants.VideoCell.textSpacing,
             width: textWidth,
             height: channelInfoSize.height
         )
@@ -169,6 +173,8 @@ class VideoCell: UICollectionViewCell {
     
     // MARK: - Configuration
     func configure(with video: Video) {
+        currentVideo = video
+        
         titleLabel.text = video.title
         durationLabel.text = " \(video.duration) "
         
@@ -178,16 +184,21 @@ class VideoCell: UICollectionViewCell {
         
         channelInfoLabel.text = "\(channelText) • \(viewsText) • \(timeText)"
         
+        // Apply gradients immediately and ensure they're applied after layout
+        applyGradients(for: video)
         setNeedsLayout()
-        
-        DispatchQueue.main.async { [weak self] in
-            self?.applyGradients(for: video)
-        }
     }
     
     private func applyGradients(for video: Video) {
+        // Ensure we have proper bounds before applying gradients
+        guard thumbnailContainerView.bounds.width > 0 && thumbnailContainerView.bounds.height > 0 else {
+            return
+        }
+        
+        // Remove old gradients first
         removeGradientLayers()
         
+        // Apply new gradients
         let thumbnailColors = GradientHelper.thumbnailGradient(for: video.id)
         addGradient(to: thumbnailContainerView, colors: thumbnailColors)
         
