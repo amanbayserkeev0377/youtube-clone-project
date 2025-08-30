@@ -2,13 +2,8 @@ import UIKit
 
 class FilterCell: UICollectionViewCell {
     
+    // MARK: - UI Elements
     private let titleLabel = UILabel()
-    
-    private struct Layout {
-        static let cornerRadius: CGFloat = 12
-        static let verticalPadding: CGFloat = 8
-        static let horizontalPadding: CGFloat = 8
-    }
         
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -37,22 +32,22 @@ class FilterCell: UICollectionViewCell {
             titleLabel.textColor = UIColor.label
         }
         
-        backgroundConfig.cornerRadius = Layout.cornerRadius
+        backgroundConfig.cornerRadius = LayoutConstants.FilterCell.cornerRadius
         self.backgroundConfiguration = backgroundConfig
     }
     
     private func setupUI() {
-        titleLabel.font = UIFont.systemFont(ofSize: 14, weight: .medium)
+        titleLabel.font = FontConstants.filterCellFont
         titleLabel.textAlignment = .center
         contentView.addSubview(titleLabel)
     }
     
     private func setupFrames() {
         titleLabel.frame = CGRect(
-            x: Layout.horizontalPadding,
-            y: Layout.verticalPadding,
-            width: contentView.bounds.width - (Layout.horizontalPadding * 2),
-            height: contentView.bounds.height - (Layout.verticalPadding * 2)
+            x: LayoutConstants.FilterCell.horizontalPadding,
+            y: LayoutConstants.FilterCell.verticalPadding,
+            width: contentView.bounds.width - (LayoutConstants.FilterCell.horizontalPadding * 2),
+            height: contentView.bounds.height - (LayoutConstants.FilterCell.verticalPadding * 2)
         )
     }
     

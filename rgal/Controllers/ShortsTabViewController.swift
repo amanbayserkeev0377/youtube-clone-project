@@ -5,6 +5,7 @@ class ShortsTabViewController: UIViewController, UICollectionViewDelegate {
     // MARK: - Properties
     var startingVideoIndex: Int = 0
     var isFromHomeNavigation: Bool = false
+    private let dataService: DataServiceProtocol = MockDataService.shared
     
     // MARK: - UI Elements
     private lazy var collectionView: UICollectionView = {
@@ -21,7 +22,7 @@ class ShortsTabViewController: UIViewController, UICollectionViewDelegate {
         setupUI()
         setupCollectionView()
 
-        if startingVideoIndex > 0 && startingVideoIndex < MockData.shortsVideos.count {
+        if startingVideoIndex > 0 && startingVideoIndex < dataService.getShortsVideos().count {
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 let indexPath = IndexPath(item: self.startingVideoIndex, section: 0)
@@ -118,7 +119,7 @@ class ShortsTabViewController: UIViewController, UICollectionViewDelegate {
     }
     
     private func setupCollectionView() {
-        collectionView.register(ShortsPlayerCell.self, forCellWithReuseIdentifier: "ShortsPlayerCell")
+        collectionView.register(ShortsPlayerCell.self, forCellWithReuseIdentifier: CellIdentifier.shortsPlayerCell)
         collectionView.delegate = self
         collectionView.dataSource = self
         
@@ -140,12 +141,12 @@ class ShortsTabViewController: UIViewController, UICollectionViewDelegate {
 extension ShortsTabViewController: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return MockData.shortsVideos.count
+        return dataService.getShortsVideos().count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ShortsPlayerCell", for: indexPath) as! ShortsPlayerCell
-        let video = MockData.shortsVideos[indexPath.item]
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CellIdentifier.shortsPlayerCell, for: indexPath) as! ShortsPlayerCell
+        let video = dataService.getShortsVideos()[indexPath.item]
         cell.configure(with: video, at: indexPath.item)
         return cell
     }

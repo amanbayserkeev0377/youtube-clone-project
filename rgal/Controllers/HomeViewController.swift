@@ -9,7 +9,7 @@ enum HomeSection: Int, CaseIterable {
 class HomeViewController: UIViewController {
     
     // MARK: - UI Elements
-    private let customNavBar = UIView()
+    private let customNavigationBar = UIView()
     private let logoImageView = UIImageView()
     private let castButton = UIButton()
     private let notificationButton = UIButton()
@@ -19,28 +19,23 @@ class HomeViewController: UIViewController {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
         collectionView.backgroundColor = .systemBackground
         collectionView.showsVerticalScrollIndicator = true
+        
+        // Optimize scrolling performance
+        collectionView.isPrefetchingEnabled = true
+        collectionView.remembersLastFocusedIndexPath = false
+        
         return collectionView
     }()
     
-    //MARK: - Data
-    
-    private let filters = ["All", "Gaming", "Music", "News", "Podcasts", "Tech", "Entertainment"]
+    // MARK: - Data
+    private let dataService: DataServiceProtocol = MockDataService.shared
+    private var filters: [String] = []
     private var selectedFilterIndex = 0
     private var filteredVideos: [Video] = []
-        
-    // MARK: - Constants
-    
-    private struct Layout {
-        static let navBarHeight: CGFloat = 44
-        static let horizontalPadding: CGFloat = 16
-        static let buttonSize: CGFloat = 24
-        static let buttonSpacing: CGFloat = 16
-        static let logoWidth: CGFloat = 92
-        static let logoHeight: CGFloat = 28
-    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        loadData()
         setupUI()
         setupCollectionView()
         updateFilteredContent()
@@ -51,48 +46,53 @@ class HomeViewController: UIViewController {
         setupFrames()
     }
     
+    // MARK: - Data Loading
+    private func loadData() {
+        filters = dataService.getFilters()
+    }
+    
     private func setupUI() {
         view.backgroundColor = .systemBackground
         navigationController?.navigationBar.isHidden = true
         
-        setupCustomNavBar()
+        setupCustomNavigationBar()
         view.addSubview(collectionView)
     }
         
-    private func setupCustomNavBar() {
-        customNavBar.backgroundColor = .systemBackground
-        view.addSubview(customNavBar)
+    private func setupCustomNavigationBar() {
+        customNavigationBar.backgroundColor = .systemBackground
+        view.addSubview(customNavigationBar)
         
         logoImageView.image = UIImage(named: "youtube_logo")
         logoImageView.contentMode = .scaleAspectFit
-        customNavBar.addSubview(logoImageView)
+        customNavigationBar.addSubview(logoImageView)
         
-        setupNavButtons()
+        setupNavigationButtons()
     }
     
-    private func setupNavButtons() {
+    private func setupNavigationButtons() {
         castButton.setImage(UIImage(systemName: "airplay.video"), for: .normal)
         castButton.tintColor = .label
         castButton.addTarget(self, action: #selector(castButtonTapped), for: .touchUpInside)
-        customNavBar.addSubview(castButton)
+        customNavigationBar.addSubview(castButton)
         
         notificationButton.setImage(UIImage(systemName: "bell"), for: .normal)
         notificationButton.tintColor = .label
         notificationButton.addTarget(self, action: #selector(notificationButtonTapped), for: .touchUpInside)
-        customNavBar.addSubview(notificationButton)
+        customNavigationBar.addSubview(notificationButton)
         
         searchButton.setImage(UIImage(systemName: "magnifyingglass"), for: .normal)
         searchButton.tintColor = .label
         searchButton.addTarget(self, action: #selector(searchButtonTapped), for: .touchUpInside)
-        customNavBar.addSubview(searchButton)
+        customNavigationBar.addSubview(searchButton)
     }
     
     private func setupCollectionView() {
-        collectionView.register(FilterCell.self, forCellWithReuseIdentifier: "FilterCell")
-        collectionView.register(ShortsCell.self, forCellWithReuseIdentifier: "ShortsCell")
-        collectionView.register(VideoCell.self, forCellWithReuseIdentifier: "VideoCell")
+        collectionView.register(FilterCell.self, forCellWithReuseIdentifier: CellIdentifier.filterCell)
+        collectionView.register(ShortsCell.self, forCellWithReuseIdentifier: CellIdentifier.shortsCell)
+        collectionView.register(VideoCell.self, forCellWithReuseIdentifier: CellIdentifier.videoCell)
         
-        collectionView.register(ShortsHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "ShortsHeader")
+        collectionView.register(ShortsHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: SupplementaryViewIdentifier.shortsHeader)
         
         collectionView.delegate = self
         collectionView.dataSource = self
@@ -102,43 +102,47 @@ class HomeViewController: UIViewController {
         let safeAreaTop = view.safeAreaInsets.top
         let screenWidth = view.bounds.width
         
-        customNavBar.frame = CGRect(x: 0, y: safeAreaTop, width: screenWidth, height: Layout.navBarHeight)
+        customNavigationBar.frame = CGRect(
+            x: 0,
+            y: safeAreaTop,
+            width: screenWidth,
+            height: LayoutConstants.Home.navigationBarHeight
+        )
         
         logoImageView.frame = CGRect(
-            x: Layout.horizontalPadding,
-            y: (Layout.navBarHeight - Layout.logoHeight) / 2,
-            width: Layout.logoWidth,
-            height: Layout.logoHeight
+            x: LayoutConstants.Home.horizontalPadding,
+            y: (LayoutConstants.Home.navigationBarHeight - LayoutConstants.Home.logoHeight) / 2,
+            width: LayoutConstants.Home.logoWidth,
+            height: LayoutConstants.Home.logoHeight
         )
         
         searchButton.frame = CGRect(
-            x: screenWidth - Layout.horizontalPadding - Layout.buttonSize,
-            y: (Layout.navBarHeight - Layout.buttonSize) / 2,
-            width: Layout.buttonSize,
-            height: Layout.buttonSize
+            x: screenWidth - LayoutConstants.Home.horizontalPadding - LayoutConstants.Home.buttonSize,
+            y: (LayoutConstants.Home.navigationBarHeight - LayoutConstants.Home.buttonSize) / 2,
+            width: LayoutConstants.Home.buttonSize,
+            height: LayoutConstants.Home.buttonSize
         )
         
         notificationButton.frame = CGRect(
-            x: searchButton.frame.minX - Layout.buttonSpacing - Layout.buttonSize,
-            y: (Layout.navBarHeight - Layout.buttonSize) / 2,
-            width: Layout.buttonSize,
-            height: Layout.buttonSize
+            x: searchButton.frame.minX - LayoutConstants.Home.buttonSpacing - LayoutConstants.Home.buttonSize,
+            y: (LayoutConstants.Home.navigationBarHeight - LayoutConstants.Home.buttonSize) / 2,
+            width: LayoutConstants.Home.buttonSize,
+            height: LayoutConstants.Home.buttonSize
         )
         
         castButton.frame = CGRect(
-            x: notificationButton.frame.minX - Layout.buttonSpacing - Layout.buttonSize,
-            y: (Layout.navBarHeight - Layout.buttonSize) / 2,
-            width: Layout.buttonSize,
-            height: Layout.buttonSize
+            x: notificationButton.frame.minX - LayoutConstants.Home.buttonSpacing - LayoutConstants.Home.buttonSize,
+            y: (LayoutConstants.Home.navigationBarHeight - LayoutConstants.Home.buttonSize) / 2,
+            width: LayoutConstants.Home.buttonSize,
+            height: LayoutConstants.Home.buttonSize
         )
         
         collectionView.frame = CGRect(
             x: 0,
-            y: safeAreaTop + Layout.navBarHeight,
+            y: safeAreaTop + LayoutConstants.Home.navigationBarHeight,
             width: screenWidth,
-            height: view.bounds.height - safeAreaTop - Layout.navBarHeight - view.safeAreaInsets.bottom
+            height: view.bounds.height - safeAreaTop - LayoutConstants.Home.navigationBarHeight - view.safeAreaInsets.bottom
         )
-        
     }
         
     // MARK: - CompositionalLayout
@@ -164,32 +168,30 @@ class HomeViewController: UIViewController {
     }
     
     private func createFiltersSection() -> NSCollectionLayoutSection {
-        let font = UIFont.systemFont(ofSize: 14, weight: .medium)
-        
         var items: [NSCollectionLayoutItem] = []
         
         for filterText in filters {
-            let textSize = filterText.size(withAttributes: [.font: font])
-            let itemWidth = ceil(textSize.width) + 24
+            let textSize = filterText.size(withAttributes: [.font: FontConstants.filterCellFont])
+            let itemWidth = ceil(textSize.width) + CollectionLayoutConstants.Filters.extraPadding
             
             let itemSize = NSCollectionLayoutSize(
                 widthDimension: .absolute(itemWidth),
-                heightDimension: .absolute(40)
+                heightDimension: .absolute(CollectionLayoutConstants.Filters.height)
             )
             let item = NSCollectionLayoutItem(layoutSize: itemSize)
             items.append(item)
         }
         
         let groupSize = NSCollectionLayoutSize(
-            widthDimension: .estimated(1000),
-            heightDimension: .absolute(40)
+            widthDimension: .estimated(CollectionLayoutConstants.Filters.estimatedWidth),
+            heightDimension: .absolute(CollectionLayoutConstants.Filters.height)
         )
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: items)
-        group.interItemSpacing = .fixed(8)
+        group.interItemSpacing = .fixed(CollectionLayoutConstants.Filters.itemSpacing)
         
         let section = NSCollectionLayoutSection(group: group)
         section.orthogonalScrollingBehavior = .continuous
-        section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 16, bottom: 16, trailing: 16)
+        section.contentInsets = CollectionLayoutConstants.Filters.contentInsets
         
         return section
     }
@@ -198,25 +200,25 @@ class HomeViewController: UIViewController {
         guard shouldShowShorts() else { return nil }
         
         let itemSize = NSCollectionLayoutSize(
-            widthDimension: .absolute(140),
-            heightDimension: .absolute(240)
+            widthDimension: .absolute(CollectionLayoutConstants.Shorts.itemWidth),
+            heightDimension: .absolute(CollectionLayoutConstants.Shorts.itemHeight)
         )
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
         
         let groupSize = NSCollectionLayoutSize(
-            widthDimension: .absolute(140),
-            heightDimension: .absolute(240)
+            widthDimension: .absolute(CollectionLayoutConstants.Shorts.itemWidth),
+            heightDimension: .absolute(CollectionLayoutConstants.Shorts.itemHeight)
         )
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
         
         let section = NSCollectionLayoutSection(group: group)
         section.orthogonalScrollingBehavior = .continuous
-        section.interGroupSpacing = 8
-        section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 16, bottom: 24, trailing: 0)
+        section.interGroupSpacing = CollectionLayoutConstants.Shorts.interGroupSpacing
+        section.contentInsets = CollectionLayoutConstants.Shorts.contentInsets
         
         let headerSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
-            heightDimension: .absolute(32)
+            heightDimension: .absolute(CollectionLayoutConstants.Shorts.headerHeight)
         )
         let header = NSCollectionLayoutBoundarySupplementaryItem(
             layoutSize: headerSize,
@@ -231,18 +233,18 @@ class HomeViewController: UIViewController {
     private func createVideosSection() -> NSCollectionLayoutSection {
         let itemSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
-            heightDimension: .absolute(330)
+            heightDimension: .absolute(CollectionLayoutConstants.Videos.itemHeight)
         )
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
         
         let groupSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
-            heightDimension: .absolute(330)
+            heightDimension: .absolute(CollectionLayoutConstants.Videos.itemHeight)
         )
         let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
         
         let section = NSCollectionLayoutSection(group: group)
-        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 20, trailing: 0)
+        section.contentInsets = CollectionLayoutConstants.Videos.contentInsets
         
         return section
     }
@@ -253,13 +255,15 @@ class HomeViewController: UIViewController {
     }
     
     private func getFilteredVideos() -> [Video] {
+        let videos = dataService.getVideos()
+        
         if selectedFilterIndex == 0 {
-            return MockData.videos.filter { $0.category != nil }
+            return videos.filter { $0.category != nil }
         }
         
         let selectedFilter = filters[selectedFilterIndex]
         guard let category = VideoCategory(rawValue: selectedFilter) else { return [] }
-        return MockData.videos.filter { $0.category == category }
+        return videos.filter { $0.category == category }
     }
     
     private func updateFilteredContent() {
@@ -298,7 +302,7 @@ extension HomeViewController: UICollectionViewDataSource {
         if shouldShowShorts() {
             switch section {
             case 0: return filters.count
-            case 1: return MockData.shortsVideos.count
+            case 1: return dataService.getShortsVideos().count
             case 2: return filteredVideos.count
             default: return 0
             }
@@ -315,17 +319,17 @@ extension HomeViewController: UICollectionViewDataSource {
         if shouldShowShorts() {
             switch indexPath.section {
             case 0: // Filters
-                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "FilterCell", for: indexPath) as! FilterCell
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CellIdentifier.filterCell, for: indexPath) as! FilterCell
                 cell.configure(with: filters[indexPath.item])
                 cell.isSelected = indexPath.item == selectedFilterIndex
                 return cell
             case 1: // Shorts
-                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ShortsCell", for: indexPath) as! ShortsCell
-                let video = MockData.shortsVideos[indexPath.item]
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CellIdentifier.shortsCell, for: indexPath) as! ShortsCell
+                let video = dataService.getShortsVideos()[indexPath.item]
                 cell.configure(with: video, at: indexPath.item)
                 return cell
             case 2: // Videos
-                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "VideoCell", for: indexPath) as! VideoCell
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CellIdentifier.videoCell, for: indexPath) as! VideoCell
                 let video = filteredVideos[indexPath.item]
                 cell.configure(with: video)
                 return cell
@@ -337,12 +341,12 @@ extension HomeViewController: UICollectionViewDataSource {
             // When not showing Shorts
             switch indexPath.section {
             case 0: // Filters
-                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "FilterCell", for: indexPath) as! FilterCell
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CellIdentifier.filterCell, for: indexPath) as! FilterCell
                 cell.configure(with: filters[indexPath.item])
                 cell.isSelected = indexPath.item == selectedFilterIndex
                 return cell
             case 1: // Videos
-                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "VideoCell", for: indexPath) as! VideoCell
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CellIdentifier.videoCell, for: indexPath) as! VideoCell
                 let video = filteredVideos[indexPath.item]
                 cell.configure(with: video)
                 return cell
@@ -357,7 +361,7 @@ extension HomeViewController: UICollectionViewDataSource {
         if kind == UICollectionView.elementKindSectionHeader && indexPath.section == 1 && shouldShowShorts() {
             let header = collectionView.dequeueReusableSupplementaryView(
                 ofKind: kind,
-                withReuseIdentifier: "ShortsHeader",
+                withReuseIdentifier: SupplementaryViewIdentifier.shortsHeader,
                 for: indexPath
             ) as! ShortsHeaderView
             return header
@@ -379,7 +383,7 @@ extension HomeViewController: UICollectionViewDelegate {
                 print("Filter selected: \(filters[indexPath.item]) - showing \(filteredVideos.count) videos")
                 
             case 1:
-                let video = MockData.shortsVideos[indexPath.item]
+                let video = dataService.getShortsVideos()[indexPath.item]
                 print("Shorts video tapped: \(video.title)")
                 openShortsWithPush(startingAt: indexPath.item)
                 
@@ -409,6 +413,7 @@ extension HomeViewController: UICollectionViewDelegate {
     }
     
     private func openShortsWithPush(startingAt index: Int) {
+        print("Opening Shorts with index: \(index)")
         let shortsVC = ShortsTabViewController()
         shortsVC.startingVideoIndex = index
         shortsVC.isFromHomeNavigation = true
